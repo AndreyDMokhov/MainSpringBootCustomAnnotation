@@ -1,23 +1,30 @@
 package com.naya.main.annotation.starter.annotation;
 
 import lombok.SneakyThrows;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 
 import java.lang.reflect.Method;
 
-public class MainAnnotationHandler implements BeanPostProcessor {
+public class MainAnnotationHandler implements ApplicationListener<ContextRefreshedEvent> {
+
+    @Autowired
+    ApplicationContext context;
+
     @Override
     @SneakyThrows
-    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-        Method[] methods = bean.getClass().getMethods();
-        for (Method method : methods) {
-            Main annotation = method.getAnnotation(Main.class);
-            if (annotation != null) {
-              method.invoke(bean);
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        String[] beanDefinitionNames = context.getBeanDefinitionNames();
+        for (String beanDefinitionName : beanDefinitionNames) {
+            Object bean = context.getBean(beanDefinitionName);
+            Method[] methods = bean.getClass().getMethods();
+            for (Method m : methods) {
+                if (m.isAnnotationPresent(Main.class)) {
+                    m.invoke(bean);
+                }
             }
         }
-        return bean;
     }
-
 }
